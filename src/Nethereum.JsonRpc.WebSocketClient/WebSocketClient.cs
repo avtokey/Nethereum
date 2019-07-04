@@ -118,20 +118,22 @@ namespace Nethereum.JsonRpc.WebSocketClient
                 var cancellationTokenSource = new CancellationTokenSource();
                 cancellationTokenSource.CancelAfter(ConnectionTimeout);
 
-                var webSocket = await GetClientWebSocketAsync().ConfigureAwait(false);
-                await webSocket.SendAsync(requestBytes, WebSocketMessageType.Text, true, cancellationTokenSource.Token)
-                    .ConfigureAwait(false);
-
-                using (var memoryData = await ReceiveFullResponseAsync(webSocket).ConfigureAwait(false))
+                using (var webSocket = await GetClientWebSocketAsync().ConfigureAwait(false))
                 {
-                    memoryData.Position = 0;
-                    using (var streamReader = new StreamReader(memoryData))
-                    using (var reader = new JsonTextReader(streamReader))
+                    await webSocket.SendAsync(requestBytes, WebSocketMessageType.Text, true, cancellationTokenSource.Token)
+                   .ConfigureAwait(false);
+
+                    using (var memoryData = await ReceiveFullResponseAsync(webSocket).ConfigureAwait(false))
                     {
-                        var serializer = JsonSerializer.Create(JsonSerializerSettings);
-                        var message = serializer.Deserialize<RpcResponseMessage>(reader);
-                        logger.LogResponse(message);
-                        return message;
+                        memoryData.Position = 0;
+                        using (var streamReader = new StreamReader(memoryData))
+                        using (var reader = new JsonTextReader(streamReader))
+                        {
+                            var serializer = JsonSerializer.Create(JsonSerializerSettings);
+                            var message = serializer.Deserialize<RpcResponseMessage>(reader);
+                            logger.LogResponse(message);
+                            return message;
+                        }
                     }
                 }
             }
